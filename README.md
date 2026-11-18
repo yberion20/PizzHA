@@ -42,14 +42,28 @@ Dort kannst du die Hefe- oder Anstellgut-Menge auch direkt in Prozent vorgeben.
    Manuell geht es auch: den Ordner `custom_components/pizza_dough` nach `config/custom_components/` kopieren.
 2. Einstellungen → Geräte & Dienste → *Integration hinzufügen* → **Pizzateig-Planer**.
 3. Den Benachrichtigungsdienst deines Handys wählen, z. B. `mobile_app_mein_handy`. Optional eine Vorab-Erinnerung in Minuten einstellen.
-4. Dashboard bearbeiten → *Karte hinzufügen* → **Pizzateig-Planer**. Oder per YAML:
+4. Dashboard bearbeiten → *Karte hinzufügen* → oben den Reiter **„Nach Karte“** wählen (nicht „Nach Entität“) → „Pizza“ suchen → **Pizzateig-Planer**. Die Karte steht unter „Benutzerdefinierte Karten“. Oder per YAML (*Manuell*):
 
    ```yaml
    type: custom:pizza-dough-card
    title: Pizzateig
    ```
 
-   Die Karte wird von der Integration automatisch geladen. Eine eigene Lovelace-Ressource ist nicht nötig. Falls die Karte nach einem Update nicht erscheint, leere den Browser-Cache.
+   Die Integration trägt die Karte beim Start automatisch unter *Einstellungen → Dashboards → Ressourcen* ein (`/pizza_dough/pizza-dough-card.js`). Nach der Installation oder einem Update deshalb **Home Assistant neu starten** und die Seite mit **Strg+F5** neu laden. In der Companion-App: *Einstellungen → Companion-App → Fehlerbehebung → Frontend-Cache zurücksetzen*.
+
+   **Karte fehlt trotzdem?**
+   - `http://DEINE-HA-ADRESSE:8123/pizza_dough/pizza-dough-card.js` im Browser öffnen. Kommt ein 404, ist die Installation unvollständig: in HACS „Erneut herunterladen“ und neu starten.
+   - In der Browser-Konsole (F12) sollte `PIZZA-DOUGH-CARD 0.1.1` stehen.
+   - Läuft dein Dashboard im YAML-Modus, die Ressource selbst eintragen:
+
+     ```yaml
+     lovelace:
+       resources:
+         - url: /pizza_dough/pizza-dough-card.js
+           type: module
+     ```
+
+   Die Entitäten „Status“, „Zeitplan“, „Nächster Schritt“ usw., die unter „Nach Entität“ angeboten werden, sind nur Einzelwerte für eigene Karten. Rechner und Planer gibt es nur in der Karte „Pizzateig-Planer“.
 
 ### Entitäten
 

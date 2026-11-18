@@ -21,6 +21,13 @@ interface CardConfig {
 }
 
 const DOMAIN = "pizza_dough";
+const CARD_VERSION = "0.1.1";
+
+console.info(
+  `%c PIZZA-DOUGH-CARD %c ${CARD_VERSION} `,
+  "color:#fff;background:#b8432f;font-weight:700;border-radius:3px 0 0 3px",
+  "color:#b8432f;background:#fff;border:1px solid #b8432f;border-radius:0 3px 3px 0",
+);
 
 class PizzaDoughCard extends LitElement {
   static properties = {

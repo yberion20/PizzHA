@@ -144,3 +144,53 @@ async def test_invalid_plan(hass: HomeAssistant, setup) -> None:
         await hass.services.async_call(DOMAIN, "start_plan", {"steps": []}, blocking=True)
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(DOMAIN, "start_plan", {"steps": [{"id": "x", "title": "t", "at": "kein datum"}]}, blocking=True)
+
+
+async def _lovelace_resources(hass):
+    from homeassistant.components.lovelace.const import LOVELACE_DATA
+
+    res = hass.data[LOVELACE_DATA].resources
+    if not res.loaded:
+        await res.async_load()
+        res.loaded = True
+    return [i for i in res.async_items() if i["url"].startswith("/pizza_dough/")]
+
+
+async def test_card_resource_registered(hass: HomeAssistant, hass_client) -> None:
+    from homeassistant.components.lovelace.const import LOVELACE_DATA
+    from homeassistant.setup import async_setup_component
+
+    assert await async_setup_component(hass, "http", {})
+    assert await async_setup_component(hass, "lovelace", {})
+    res = hass.data[LOVELACE_DATA].resources
+    await res.async_load()
+    res.loaded = True
+    # veraltete Ressource aus einer früheren Version
+    await res.async_create_item({"res_type": "module", "url": "/pizza_dough/pizza-dough-card.js?v=0.1.0"})
+
+    entry = MockConfigEntry(domain=DOMAIN, data={"notify_services": []})
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    items = await _lovelace_resources(hass)
+    assert len(items) == 1
+    assert items[0]["type"] == "module"
+    assert items[0]["url"].startswith("/pizza_dough/pizza-dough-card.js?v=")
+    assert items[0]["url"] != "/pizza_dough/pizza-dough-card.js?v=0.1.0"
+
+    # Reload erzeugt kein Duplikat
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert len(await _lovelace_resources(hass)) == 1
+
+    # Datei wird ausgeliefert
+    client = await hass_client()
+    resp = await client.get(items[0]["url"])
+    assert resp.status == 200
+    assert "pizza-dough-card" in await resp.text()
+
+    # Entfernen der Integration räumt die Ressource auf
+    assert await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+    assert await _lovelace_resources(hass) == []

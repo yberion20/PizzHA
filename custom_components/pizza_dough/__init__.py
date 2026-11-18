@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from pathlib import Path
+from typing import Any
 
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, Platform
+from homeassistant.core import Event, HomeAssistant, ServiceCall
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
@@ -21,7 +23,6 @@ from .const import (
     SERVICE_CANCEL_PLAN,
     SERVICE_COMPLETE_STEP,
     SERVICE_START_PLAN,
-    VERSION,
 )
 from .manager import PlanManager
 
@@ -89,20 +90,114 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
+def _card_path() -> Path:
+    return Path(__file__).parent / "www" / CARD_FILENAME
+
+
+def _file_hash(path: Path) -> str:
+    return hashlib.sha1(path.read_bytes()).hexdigest()[:8]
+
+
 async def _async_register_card(hass: HomeAssistant) -> None:
-    """Liefert www/pizza-dough-card.js aus und lädt sie automatisch im Frontend."""
-    card = Path(__file__).parent / "www" / CARD_FILENAME
-    if not card.is_file() or getattr(hass, "http", None) is None:
-        _LOGGER.debug("Lovelace-Karte wird nicht registriert (Datei oder HTTP fehlt)")
+    """Liefert www/pizza-dough-card.js aus und sorgt dafür, dass das Frontend sie lädt."""
+    card = _card_path()
+    if not await hass.async_add_executor_job(card.is_file):
+        _LOGGER.error(
+            "Lovelace-Karte fehlt (%s). Die Installation ist unvollständig, bitte die Integration "
+            "in HACS neu herunterladen",
+            card,
+        )
         return
+    if getattr(hass, "http", None) is None:
+        _LOGGER.warning("HTTP-Komponente nicht geladen, Lovelace-Karte wird nicht bereitgestellt")
+        return
+
+    from homeassistant.components.http import StaticPathConfig
+
+    try:
+        await hass.http.async_register_static_paths([StaticPathConfig(CARD_URL, str(card), False)])
+    except RuntimeError:
+        _LOGGER.debug("Statischer Pfad %s ist bereits registriert", CARD_URL)
+
+    url = f"{CARD_URL}?v={await hass.async_add_executor_job(_file_hash, card)}"
+
+    # Rückfallebene: Modul direkt in jede Frontend-Seite einbinden
     try:
         from homeassistant.components.frontend import add_extra_js_url
-        from homeassistant.components.http import StaticPathConfig
 
-        await hass.http.async_register_static_paths([StaticPathConfig(CARD_URL, str(card), True)])
-        add_extra_js_url(hass, f"{CARD_URL}?v={VERSION}")
-    except (KeyError, RuntimeError, HomeAssistantError) as err:  # Frontend nicht geladen
-        _LOGGER.warning("Lovelace-Karte konnte nicht registriert werden: %s", err)
+        add_extra_js_url(hass, url)
+    except (ImportError, KeyError) as err:
+        _LOGGER.debug("add_extra_js_url nicht verfügbar: %s", err)
+
+    async def _register(_event: Event | None = None) -> None:
+        try:
+            await _async_register_lovelace_resource(hass, url)
+        except Exception:  # noqa: BLE001 - die Integration soll trotzdem laufen
+            _LOGGER.exception("Lovelace-Ressource konnte nicht registriert werden")
+
+    if _lovelace_data(hass) is not None:
+        await _register()
+    else:
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _register)
+
+
+def _lovelace_data(hass: HomeAssistant) -> Any:
+    try:
+        from homeassistant.components.lovelace.const import LOVELACE_DATA
+    except ImportError:
+        return None
+    return hass.data.get(LOVELACE_DATA)
+
+
+async def _async_resources(hass: HomeAssistant) -> Any:
+    """Die Ressourcen-Sammlung im Storage-Modus, sonst None."""
+    data = _lovelace_data(hass)
+    if data is None:
+        return None
+    if getattr(data, "resource_mode", None) != "storage":
+        return None
+    resources = data.resources
+    if not getattr(resources, "loaded", True):
+        await resources.async_load()
+        resources.loaded = True
+    return resources
+
+
+async def _async_register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
+    """Trägt die Karte unter Einstellungen → Dashboards → Ressourcen ein (wie HACS für Plugins)."""
+    data = _lovelace_data(hass)
+    if data is None:
+        _LOGGER.warning("Lovelace ist nicht geladen, Karte nur über extra_module_url eingebunden")
+        return
+    resources = await _async_resources(hass)
+    if resources is None:
+        _LOGGER.warning(
+            "Lovelace läuft im YAML-Modus. Bitte unter lovelace: resources: eintragen: "
+            "- url: %s  type: module",
+            CARD_URL,
+        )
+        return
+    existing = [item for item in resources.async_items() if str(item.get("url", "")).split("?")[0] == CARD_URL]
+    if existing:
+        first, *duplicates = existing
+        if first.get("url") != url or first.get("type") != "module":
+            await resources.async_update_item(first["id"], {"res_type": "module", "url": url})
+            _LOGGER.info("Lovelace-Ressource aktualisiert: %s", url)
+        for item in duplicates:
+            await resources.async_delete_item(item["id"])
+        return
+    await resources.async_create_item({"res_type": "module", "url": url})
+    _LOGGER.info("Lovelace-Karte als Ressource registriert: %s", url)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Beim Entfernen der Integration auch die Lovelace-Ressource entfernen."""
+    resources = await _async_resources(hass)
+    if resources is None:
+        return
+    for item in list(resources.async_items()):
+        if str(item.get("url", "")).split("?")[0] == CARD_URL:
+            await resources.async_delete_item(item["id"])
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: PizzaConfigEntry) -> bool:

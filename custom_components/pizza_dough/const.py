@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "pizza_dough"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 CONF_NOTIFY_SERVICES = "notify_services"
 CONF_REMIND_BEFORE = "remind_before"
