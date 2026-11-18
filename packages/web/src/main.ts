@@ -1,7 +1,7 @@
 import { LitElement, css, html, nothing } from "lit";
 import "@pizza-dough/ui";
 import { loadRaw, save, type ActivePlan, type PlanBackend } from "@pizza-dough/ui";
-import type { PlanPayload } from "@pizza-dough/core";
+import { haUrlProblem, type PlanPayload } from "@pizza-dough/core";
 
 const STORAGE_ACTIVE = "pizza-dough:active-plan";
 const STORAGE_HA = "pizza-dough:ha";
@@ -107,12 +107,25 @@ class PizzaDoughApp extends LitElement {
 
   private _sendToHa = async (plan: PlanPayload): Promise<string> => {
     const { url, token } = this._ha;
-    if (!url || !token) throw new Error("Bitte zuerst unten Home-Assistant-URL und Token eintragen.");
-    const res = await fetch(`${url.replace(/\/$/, "")}/api/services/pizza_dough/start_plan`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify(plan),
-    });
+    const problem = haUrlProblem(url, location.protocol);
+    if (problem) throw new Error(problem);
+    if (!token) throw new Error("Bitte zuerst unten einen Long-Lived Access Token eintragen.");
+    const base = url.trim().replace(/\/$/, "");
+    let res: Response;
+    try {
+      res = await fetch(`${base}/api/services/pizza_dough/start_plan`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(plan),
+      });
+    } catch {
+      throw new Error(
+        `Home Assistant unter ${base} ist nicht erreichbar. Prüfe die Adresse und ob in der configuration.yaml ` +
+          `unter http: cors_allowed_origins: die Adresse ${location.origin} eingetragen ist (danach HA neu starten).`,
+      );
+    }
+    if (res.status === 401) throw new Error("Home Assistant lehnt den Token ab (401). Bitte einen neuen Long-Lived Access Token erstellen.");
+    if (res.status === 400) throw new Error("Home Assistant kennt den Dienst nicht (400). Ist die Integration Pizzateig-Planer eingerichtet?");
     if (!res.ok) throw new Error(`Home Assistant antwortet mit ${res.status} ${res.statusText}`);
     return "Plan an Home Assistant gesendet. Die Erinnerungen kommen jetzt über die Companion-App.";
   };
@@ -159,9 +172,20 @@ class PizzaDoughApp extends LitElement {
               @change=${(e: Event) => this._saveHa({ token: (e.target as HTMLInputElement).value.trim() })} /></label>
           </div>
           <p class="muted">
-            Den Token erstellst du in Home Assistant unter Profil → Sicherheit. Er wird nur in diesem Browser gespeichert.
-            Damit der Browser Home Assistant erreichen darf, muss die Adresse dieser App in <code>http: cors_allowed_origins</code> eingetragen sein.
+            Den Token erstellst du in Home Assistant unter Profil → Sicherheit → Long-Lived Access Tokens. Er wird nur in diesem
+            Browser gespeichert.
           </p>
+          <p class="muted">
+            Damit das klappt, braucht es zwei Dinge. Erstens muss Home Assistant über <b>https</b> erreichbar sein
+            (z. B. Nabu Casa oder eigene Domain), denn von dieser https-Seite blockiert der Browser Adressen wie
+            <code>http://192.168…</code>. Zweitens muss diese Adresse in der <code>configuration.yaml</code> erlaubt sein:
+          </p>
+          <pre>http:
+  cors_allowed_origins:
+    - ${location.origin}</pre>
+          ${haUrlProblem(this._ha.url, location.protocol) && this._ha.url
+            ? html`<p class="warn">⚠ ${haUrlProblem(this._ha.url, location.protocol)}</p>`
+            : nothing}
           ${this._ha.token ? html`<button @click=${() => this._saveHa({ token: "" })}>Token löschen</button>` : nothing}
         </details>
       </main>
@@ -182,6 +206,8 @@ class PizzaDoughApp extends LitElement {
     button { font: inherit; font-weight: 600; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--divider-color); background: var(--secondary-background-color); color: var(--primary-text-color); cursor: pointer; }
     .muted { color: var(--secondary-text-color); font-size: 12px; }
     code { font-size: 12px; }
+    pre { font-size: 12px; background: var(--secondary-background-color); border-radius: 8px; padding: 8px 10px; overflow-x: auto; }
+    .warn { color: var(--warning-color); font-size: 13px; }
   `;
 }
 

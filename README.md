@@ -104,22 +104,32 @@ Schritt-Typen: `mix`, `bulk_start`, `to_fridge`, `from_fridge`, `temp_change`, `
 
 ## Web-App
 
+Die Web-App läuft ohne Home Assistant direkt im Browser: **https://yberion20.github.io/PizzHA/**
+
+- Auf dem Handy über „Zum Startbildschirm hinzufügen“ (iOS: Teilen-Menü, Android: ⋮) wie eine App installieren.
+- Rezept und aktiver Plan werden nur im Browser gespeichert.
+- Erinnerungen:
+  - **Kalender (.ics)**: Der Zeitplan geht in den Handy-Kalender, mit Erinnerung pro Schritt. Das funktioniert immer.
+  - **Browser-Benachrichtigungen** kommen nur, solange die App geöffnet ist.
+  - **„An Home Assistant senden“** startet den Plan in Home Assistant, die Erinnerungen kommen dann über die Companion-App. Dafür braucht es:
+    1. Home Assistant über **https** erreichbar, z. B. Nabu Casa oder eine eigene Domain. Von der https-Seite aus blockiert der Browser Adressen wie `http://192.168…`.
+    2. Einen Long-Lived Access Token (Profil → Sicherheit).
+    3. Diesen Eintrag in der `configuration.yaml`, danach Home Assistant neu starten:
+
+       ```yaml
+       http:
+         cors_allowed_origins:
+           - https://yberion20.github.io
+       ```
+
+Die Seite wird bei jedem Push auf `main` automatisch neu gebaut (`.github/workflows/pages.yml`). Einmalig muss GitHub Pages aktiviert werden: Repo → **Settings → Pages → Source: „GitHub Actions“**.
+
+Lokal starten:
+
 ```bash
 npm install
 npm -w @pizza-dough/web run dev
 ```
-
-`npm run build` erzeugt die statische App in `packages/web/dist/`. Die lässt sich auf jedem Webserver ablegen und auf dem Handy als App installieren („Zum Startbildschirm hinzufügen“).
-
-In der Web-App:
-- Rezept und Plan werden im Browser gespeichert.
-- Browser-Benachrichtigungen kommen nur, solange die App geöffnet ist. Zuverlässiger sind der Kalender-Export oder **„An Home Assistant senden“**. Dafür trägst du HA-URL und Long-Lived Token ein und ergänzt in der HA-Konfiguration:
-
-  ```yaml
-  http:
-    cors_allowed_origins:
-      - https://adresse-der-web-app
-  ```
 
 ## Projektaufbau
 

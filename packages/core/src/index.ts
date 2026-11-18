@@ -5,3 +5,4 @@ export * from "./schedule.js";
 export * from "./ics.js";
 export * from "./format.js";
 export * from "./plan.js";
+export * from "./ha.js";
