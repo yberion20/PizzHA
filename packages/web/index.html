@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Pizzateig-Planer</title>
+    <meta name="description" content="Teigrechner und Gärzeitplan für neapolitanische Pizza" />
+    <meta name="theme-color" content="#b8432f" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <style>
+      :root {
+        --bg: #faf7f3; --card: #ffffff; --surface: #f3eee8; --text: #1f1b17; --muted: #6e665e;
+        --border: #e5ddd3; --accent: #b8432f; --warn: #a65f00;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #171412; --card: #211d1a; --surface: #2c2723; --text: #f2ece6; --muted: #a89f96;
+          --border: #3a332d; --accent: #e0694f; --warn: #e2a24a; color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #171412; --card: #211d1a; --surface: #2c2723; --text: #f2ece6; --muted: #a89f96;
+        --border: #3a332d; --accent: #e0694f; --warn: #e2a24a; color-scheme: dark;
+      }
+      html, body { margin: 0; background: var(--bg); color: var(--text);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+      pizza-dough-app {
+        --primary-color: var(--accent); --primary-text-color: var(--text); --secondary-text-color: var(--muted);
+        --card-background-color: var(--card); --secondary-background-color: var(--surface);
+        --divider-color: var(--border); --warning-color: var(--warn);
+      }
+    </style>
+  </head>
+  <body>
+    <pizza-dough-app></pizza-dough-app>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

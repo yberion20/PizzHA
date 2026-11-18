@@ -1,0 +1,11 @@
+{
+  "name": "@pizza-dough/card",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/card.ts --bundle --format=esm --minify --target=es2021 --outfile=../../custom_components/pizza_dough/www/pizza-dough-card.js"
+  },
+  "dependencies": { "@pizza-dough/ui": "0.1.0", "@pizza-dough/core": "0.1.0", "lit": "3.3.1" },
+  "devDependencies": { "esbuild": "0.25.10" }
+}

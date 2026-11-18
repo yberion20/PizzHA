@@ -1,0 +1,55 @@
+{
+  "config": {
+    "abort": { "single_instance_allowed": "Der Pizzateig-Planer ist bereits eingerichtet." },
+    "step": {
+      "user": {
+        "title": "Pizzateig-Planer",
+        "description": "Wähle aus, wohin Erinnerungen geschickt werden (z. B. notify.mobile_app_dein_handy).",
+        "data": {
+          "notify_services": "Benachrichtigungsdienste",
+          "remind_before": "Zusätzliche Vorab-Erinnerung (Minuten, 0 = aus)",
+          "persistent_notification": "Auch als Benachrichtigung in Home Assistant anzeigen"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Pizzateig-Planer",
+        "data": {
+          "notify_services": "Benachrichtigungsdienste",
+          "remind_before": "Zusätzliche Vorab-Erinnerung (Minuten, 0 = aus)",
+          "persistent_notification": "Auch als Benachrichtigung in Home Assistant anzeigen"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": { "name": "Status", "state": { "idle": "Kein Plan", "active": "Aktiv", "done": "Fertig" } },
+      "next_step": { "name": "Nächster Schritt" },
+      "next_step_time": { "name": "Nächster Schritt Zeitpunkt" }
+    },
+    "calendar": { "schedule": { "name": "Zeitplan" } }
+  },
+  "services": {
+    "start_plan": {
+      "name": "Plan starten",
+      "description": "Startet einen Teigplan. Wird normalerweise von der Lovelace-Karte aufgerufen.",
+      "fields": {
+        "name": { "name": "Name", "description": "Bezeichnung des Plans" },
+        "eat_at": { "name": "Essenszeit", "description": "ISO-Zeitpunkt, zu dem gegessen wird" },
+        "steps": { "name": "Schritte", "description": "Liste von Schritten mit id, title, at (ISO) und description" },
+        "recipe": { "name": "Rezept", "description": "Rezeptdaten (nur zur Anzeige)" },
+        "amounts": { "name": "Mengen", "description": "Zutatenmengen in Gramm (nur zur Anzeige)" }
+      }
+    },
+    "cancel_plan": { "name": "Plan abbrechen", "description": "Bricht den aktiven Plan ab und löscht alle Erinnerungen." },
+    "complete_step": {
+      "name": "Schritt erledigt",
+      "description": "Markiert einen Schritt als erledigt.",
+      "fields": { "step_id": { "name": "Schritt-ID", "description": "ID des Schritts" } }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "domain": "pizza_dough",
+  "name": "Pizzateig-Planer",
+  "after_dependencies": ["frontend", "http", "mobile_app"],
+  "codeowners": [],
+  "config_flow": true,
+  "documentation": "https://github.com/yberion20/PizzHA",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/yberion20/PizzHA/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.1.0"
+}

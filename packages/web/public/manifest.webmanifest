@@ -1,0 +1,11 @@
+{
+  "name": "Pizzateig-Planer",
+  "short_name": "Pizzateig",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#faf7f3",
+  "theme_color": "#b8432f",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

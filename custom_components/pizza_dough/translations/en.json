@@ -1,0 +1,95 @@
+{
+  "config": {
+    "abort": {
+      "single_instance_allowed": "Already configured."
+    },
+    "step": {
+      "user": {
+        "title": "Pizza dough planner",
+        "description": "Choose where reminders are sent (e.g. notify.mobile_app_your_phone).",
+        "data": {
+          "notify_services": "Notification services",
+          "remind_before": "Additional early reminder (minutes, 0 = off)",
+          "persistent_notification": "Also show as Home Assistant notification"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Pizza dough planner",
+        "data": {
+          "notify_services": "Notification services",
+          "remind_before": "Additional early reminder (minutes, 0 = off)",
+          "persistent_notification": "Also show as Home Assistant notification"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {
+        "name": "Status",
+        "state": {
+          "idle": "No plan",
+          "active": "Active",
+          "done": "Done"
+        }
+      },
+      "next_step": {
+        "name": "Next step"
+      },
+      "next_step_time": {
+        "name": "Next step time"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Schedule"
+      }
+    }
+  },
+  "services": {
+    "start_plan": {
+      "name": "Start plan",
+      "description": "Starts a dough plan (usually called by the Lovelace card).",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Bezeichnung des Plans"
+        },
+        "eat_at": {
+          "name": "Essenszeit",
+          "description": "ISO-Zeitpunkt, zu dem gegessen wird"
+        },
+        "steps": {
+          "name": "Schritte",
+          "description": "Liste von Schritten mit id, title, at (ISO) und description"
+        },
+        "recipe": {
+          "name": "Rezept",
+          "description": "Rezeptdaten (nur zur Anzeige)"
+        },
+        "amounts": {
+          "name": "Mengen",
+          "description": "Zutatenmengen in Gramm (nur zur Anzeige)"
+        }
+      }
+    },
+    "cancel_plan": {
+      "name": "Cancel plan",
+      "description": "Cancels the active plan and all reminders."
+    },
+    "complete_step": {
+      "name": "Complete step",
+      "description": "Marks a step as done.",
+      "fields": {
+        "step_id": {
+          "name": "Schritt-ID",
+          "description": "ID des Schritts"
+        }
+      }
+    }
+  }
+}

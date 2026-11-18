@@ -1,0 +1,14 @@
+{
+  "name": "pizza-dough",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "test": "npm -w @pizza-dough/core test",
+    "build": "npm -w @pizza-dough/card run build && npm -w @pizza-dough/web run build",
+    "typecheck": "tsc -p packages/core && tsc -p packages/ui && tsc -p packages/card && tsc -p packages/web"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,29 @@
+start_plan:
+  fields:
+    name:
+      example: "Samstagspizza"
+      selector:
+        text:
+    eat_at:
+      example: "2026-11-21T19:00:00+01:00"
+      selector:
+        text:
+    steps:
+      required: true
+      example: '[{"id": "1_mix", "title": "Teig ansetzen", "at": "2026-11-19T17:25:00+01:00", "description": "..."}]'
+      selector:
+        object:
+    recipe:
+      selector:
+        object:
+    amounts:
+      selector:
+        object:
+cancel_plan:
+complete_step:
+  fields:
+    step_id:
+      required: true
+      example: "1_mix"
+      selector:
+        text:
